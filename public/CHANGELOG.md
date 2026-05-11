@@ -1,3 +1,16 @@
+## v0.30.0 (2026-05-11)
+- ✨ Add adjustable image size (ratio) option for logo ([#268](https://github.com/lyqht/mini-qr/pull/268))
+- ♻️ add FontCategory type and FontOption type for better type checking and readability ([#270](https://github.com/lyqht/mini-qr/pull/270))
+- 🔧 update prettier-plugin-tailwindcss to version 0.8.0 ([#269](https://github.com/lyqht/mini-qr/pull/269))
+- 🔧 Replace qr-code-styling with internal QR renderer and add Storybook ([#267](https://github.com/lyqht/mini-qr/pull/267))
+
+## v0.28.1 (2026-05-10)
+- ✨ add log message when nothing needs to be synced with Crowdin to provide clarity on the sync process
+- 🐛 release version badge in footer/mobile changelog button ([#265](https://github.com/lyqht/mini-qr/pull/265))
+- 🐛 resource paths to use relative `./` instead of absolute `/` ([#260](https://github.com/lyqht/mini-qr/pull/260))
+- 🐛 to make sidebar sticky ([#259](https://github.com/lyqht/mini-qr/pull/259))
+- 🔧 Install Vercel Web Analytics ([#262](https://github.com/lyqht/mini-qr/pull/262))
+
 ## v0.28.0 (2026-03-13)
 - ✨ Add font family support for QR code frames ([#255](https://github.com/lyqht/mini-qr/pull/255))
 - 🐛 issue where frame is clipped in export ([#251](https://github.com/lyqht/mini-qr/pull/251))
@@ -157,7 +170,6 @@
 - 🐛 svg output not rendering in image editor softwares ([#54](https://github.com/lyqht/mini-qr/pull/54))
 
 ## v0.9.2 (2024-10-06)
-- ✨ Create FUNDING.yml
 - 🐛 svg output not rendering in image editor softwares ([#54](https://github.com/lyqht/mini-qr/pull/54))
 
 ## v0.9.1 (2024-10-06)
@@ -189,7 +201,6 @@
 
 ## v0.6.0 (2024-02-13)
 - ✨ Add shadcn-vue combobox components ([#30](https://github.com/lyqht/mini-qr/pull/30))
-- 🔧 update translate github action to only run if PRs are merged
 - 🔧 translation of locales/en.json
 - 🔧 Rename project and update readme
 

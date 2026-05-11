@@ -49,15 +49,22 @@ for ((i=0; i<${#tags[@]}; i++)); do
   fi
 
   while IFS= read -r line; do
-    # commit_hash=$(echo "$line" | cut -d' ' -f1) # Hash available if needed
-    commit_msg=$(echo "$line" | cut -d' ' -f2-) 
+    commit_hash=$(echo "$line" | cut -d' ' -f1)
+    commit_msg=$(echo "$line" | cut -d' ' -f2-)
+
+    # Skip repo-meta-only commits (e.g. "Update FUNDING.yml" — every touched
+    # file lives under .github/). Keep commits that also change product files.
+    changed_files=$(git show --pretty=format: --name-only "$commit_hash" 2>/dev/null | grep -v '^$')
+    if [ -n "$changed_files" ] && ! echo "$changed_files" | grep -qv '^\.github/'; then
+      continue
+    fi
 
     # Extract PR number first
     pr_num=""
     if [[ $commit_msg =~ \ \(#([0-9]+)\)$ ]]; then # Match PR number strictly at the end
       pr_num=${BASH_REMATCH[1]}
     fi
-    
+
     # Skip simple version bump commits like "vX.Y.Z" unless they have a PR number
     if [[ $commit_msg =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && -z "$pr_num" ]]; then
       continue
