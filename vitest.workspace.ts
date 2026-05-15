@@ -31,6 +31,15 @@ export default defineWorkspace([
     resolve: { alias }
   },
   {
+    test: {
+      name: 'server',
+      globals: true,
+      environment: 'node',
+      include: ['tests/server/**/*.test.ts']
+    },
+    resolve: { alias }
+  },
+  {
     plugins: [vue()],
     test: {
       name: 'browser',

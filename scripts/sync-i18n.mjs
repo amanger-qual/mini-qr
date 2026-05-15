@@ -126,13 +126,28 @@ if (!hasNewKeys) {
 
 // ---------------------------------------------------------------------------
 // 5. Check Crowdin CLI
+//
+// Missing CLI only blocks the commit when we have actual work for it — i.e.
+// new translation strings that need pushing. Contributors without Crowdin
+// credentials can still commit non-i18n changes.
 // ---------------------------------------------------------------------------
+let hasCrowdin = true
 try {
   execSync('crowdin --version', { stdio: 'ignore' })
 } catch {
-  log(RED, '✗ Crowdin CLI is not installed.')
-  log(YELLOW, '  Install it with: npm install -g @crowdin/cli')
-  process.exit(1)
+  hasCrowdin = false
+}
+
+if (!hasCrowdin) {
+  if (hasNewKeys) {
+    log(RED, '✗ Crowdin CLI is not installed but new translation strings were detected.')
+    log(YELLOW, '  Install it with: npm install -g @crowdin/cli')
+    log(YELLOW, '  Or revert the new strings before committing.')
+    process.exit(1)
+  }
+  log(YELLOW, '⚠ Crowdin CLI not installed — skipping translation sync.')
+  log(YELLOW, '  Translations will not be pulled from Crowdin until a maintainer commits.')
+  process.exit(0)
 }
 
 // ---------------------------------------------------------------------------

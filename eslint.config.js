@@ -97,5 +97,16 @@ export default [
       'vue/multi-word-component-names': 'off',
       'no-undef': 'error'
     }
+  },
+  {
+    files: ['server/**/*.ts', 'tests/server/**/*.ts'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        NodeJS: 'readonly',
+        global: 'readonly',
+        require: 'readonly'
+      }
+    }
   }
 ]

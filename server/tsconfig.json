@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "../src/lib/qr-code/frame.ts",
+    "../src/lib/qr-code/types.ts",
+    "../src/lib/qr-code/matrix.ts",
+    "../src/lib/qr-code/render/svg.ts",
+    "../src/lib/qr-code/render/dots.ts",
+    "../src/lib/qr-code/render/corners.ts",
+    "../src/lib/qr-code/render/image.ts",
+    "../src/lib/qr-code/render/neighbors.ts"
+  ],
+  "exclude": ["./dist", "../tests/**/*"]
+}

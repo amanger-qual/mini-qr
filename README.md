@@ -37,6 +37,7 @@ An app to create beautiful QR codes and scan various QR code types.
 - 📲 PWA Support: Install MiniQR as a desktop or mobile app
 - 📝 Data templates: Support for various data types including text, URLs, emails, phone numbers, SMS, WiFi credentials, vCards, locations, and calendar events
 - 🌍 UTF-8 input support: Vietnamese, CJK, Arabic, emoji, and other multibyte text
+- 🔌 HTTP API: generate, save, list, and download QR codes without the UI. Interactive docs at `/api/docs`. See [SELF_HOSTING.md](SELF_HOSTING.md#http-api).
 
 See [ROADMAP.md](./ROADMAP.md) for future planned features.
 
