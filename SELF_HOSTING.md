@@ -72,6 +72,8 @@ All `VITE_*` variables are **build-time** arguments — they are baked into the 
 | `PORT`                        | `PORT`                     | Runtime — port the SPA (and API, when shared) listens on.                                         | `8080`             |
 | `API_PORT`                    | `API_PORT`                 | Runtime — when set, the API binds here and the SPA stays on `PORT`. See [Split-port mode](#split-port-mode). | _(shared)_         |
 | `API_HOST`                    | `API_HOST`                 | Runtime — interface to bind the API to in split-port mode. Defaults to `HOST`.                    | _(same as `HOST`)_ |
+| `LOGO_DIR`                    | `LOGO_DIR`                 | Runtime — directory containing reusable logo files for `image.path`. Unset = feature disabled.    | _(unset)_          |
+| `REMOTE_LOGO_HOSTS`           | `REMOTE_LOGO_HOSTS`        | Runtime — comma-separated hostnames allowed for remote `image.href` URLs. Unset = any public host.| _(unset)_          |
 
 ### Passing Variables via docker-compose
 
@@ -219,14 +221,15 @@ Per-IP rate limit defaults to **1000 requests/minute** for `/api/*` (health and 
 
 | Method | Path                              | Description                                                   |
 | ------ | --------------------------------- | ------------------------------------------------------------- |
-| POST   | `/api/qr`                         | Generate (and optionally save) a QR code. Returns the binary. |
+| POST   | `/api/qr`                         | Generate (and optionally save) a QR code. JSON body. Returns binary. |
+| POST   | `/api/qr/upload`                  | Same as `/api/qr` but accepts a `multipart/form-data` body with a `logo` file part. |
 | GET    | `/api/qr/files`                   | List saved QR codes (newest first).                           |
 | GET    | `/api/qr/files/:id[.ext]`         | Download a saved QR code. Extension optional for `<img src>`. |
 | GET    | `/api/qr/files/:id/meta`          | Get the JSON sidecar (config + metadata) for a saved file.    |
 | DELETE | `/api/qr/files/:id`               | Delete a saved QR code (both binary and sidecar).             |
 | GET    | `/api/health`                     | Liveness + version. Always public, never rate limited.        |
 | GET    | `/api/docs`                       | Swagger UI.                                                   |
-| GET    | `/api/openapi.json`               | Raw OpenAPI 3.1 spec.                                         |
+| GET    | `/api/docs/json`                  | Raw OpenAPI 3.1 spec.                                         |
 
 ### Examples
 
@@ -296,6 +299,83 @@ services:
       API_PORT: 8081
 ```
 
+### Logo input
+
+The API supports four ways to attach a logo. Pick whichever fits how you're calling it:
+
+| Method                 | Where the bytes come from                     | Best for                          |
+| ---------------------- | --------------------------------------------- | --------------------------------- |
+| Inline `data:` URI     | Base64-encoded in the JSON body               | Scripts that already have bytes   |
+| Remote `http(s)://` URL| Server fetches it (with SSRF guards)          | Logos hosted on a CDN             |
+| `image.path`           | Read from `LOGO_DIR` on the server filesystem | Reusable logos across many calls  |
+| Multipart `logo` part  | Uploaded as a file part                       | Hand-off from `curl -F` / Bruno   |
+
+#### 1. Inline (data URI)
+
+```bash
+LOGO_B64=$(base64 -i logo.png | tr -d '\n')
+curl -X POST http://localhost/api/qr \
+  -H 'Content-Type: application/json' \
+  -d "{\"data\":\"https://example.com\",\"format\":\"png\",\"image\":{\"href\":\"data:image/png;base64,$LOGO_B64\",\"sizeRatio\":0.25}}" \
+  --output qr.png
+```
+
+#### 2. Remote URL
+
+```bash
+curl -X POST http://localhost/api/qr \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "data": "https://example.com",
+    "format": "png",
+    "image": { "href": "https://cdn.example.com/logo.png", "sizeRatio": 0.25 }
+  }' \
+  --output qr.png
+```
+
+Guards applied to every remote fetch:
+
+- DNS resolution must land on a public IP. Private (`10/8`, `172.16/12`, `192.168/16`), loopback (`127/8`), link-local (`169.254/16`), and the IPv6 equivalents are blocked. The literal hostname `localhost` is rejected without a DNS round-trip.
+- Body cap: 5MB.
+- Connect/read timeout: 5s.
+- Content-Type must start with `image/`.
+- Redirects are not followed (avoids cross-origin SSRF via redirect chains).
+
+Set `REMOTE_LOGO_HOSTS=cdn.example.com,assets.example.com` to restrict fetches to a specific hostname allowlist. Unset = every public host is fair game.
+
+#### 3. `image.path` (server-side filesystem)
+
+Mount logos at `LOGO_DIR` and reference by filename:
+
+```yaml
+services:
+  mini-qr:
+    environment:
+      LOGO_DIR: /data/logos
+    volumes:
+      - ./logos:/data/logos
+```
+
+```bash
+curl -X POST http://localhost/api/qr \
+  -H 'Content-Type: application/json' \
+  -d '{"data":"https://example.com","image":{"path":"brand.png","sizeRatio":0.25}}' \
+  --output qr.png
+```
+
+Guards: extension must be one of `.png .jpg .jpeg .svg .webp .gif`; the resolved real path must stay inside `LOGO_DIR` (`..` and symlink traversal are blocked).
+
+#### 4. Multipart upload (`POST /api/qr/upload`)
+
+```bash
+curl -X POST http://localhost/api/qr/upload \
+  -F 'config={"data":"https://example.com","format":"png","save":true,"name":"with-logo"}' \
+  -F 'logo=@./logo.png' \
+  --output qr.png
+```
+
+The `config` field is the same JSON body as `POST /api/qr`. Any `image.href`/`image.path` in the config is overridden by the uploaded `logo` file. Same 5MB cap and image/* mime check as the other paths.
+
 ### Persisting saved files
 
 Saved files live at `QR_STORAGE_DIR` (default `/data/qr-files`). To survive container restarts, mount a volume to that path in `docker-compose.yml`:
@@ -314,7 +394,7 @@ Each saved QR produces two files: the binary (`<id>.png|svg|jpg`) and a JSON sid
 
 ### Limitations
 
-- Server-side rendering can only inline `data:` URI logos. Remote `http(s)://` logos are not fetched (sharp/librsvg sandboxes external resources). Convert your logo to a data URI before sending.
+- Remote logos must resolve to a public IP and be served with an `image/*` content-type within 5s under 5MB. Failures are surfaced as 502/504/413/415.
 - The API is intended for trusted use behind your own reverse proxy. The included `nginx-proxy` does no auth beyond what `API_KEY` provides.
 
 ## Customization Example

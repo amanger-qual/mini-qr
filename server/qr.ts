@@ -24,7 +24,11 @@ function resolveConfig(config: QrConfigBody): ResolvedQRCodeConfig {
     background: {
       color: config.background?.color ?? DEFAULT_CONFIG.background.color
     },
-    image: config.image,
+    // After logo resolution the route layer guarantees image.href is set when
+    // an image is provided, so this narrowing is safe. The schema keeps href
+    // optional only because the field can be omitted at the wire level when
+    // `image.path` or a multipart `logo` part is used instead.
+    image: config.image?.href ? { ...config.image, href: config.image.href } : undefined,
     frame: config.frame
   }
 }

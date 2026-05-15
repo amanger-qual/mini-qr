@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
 import fastifyStatic from '@fastify/static'
+import fastifyMultipart from '@fastify/multipart'
 import fastifyRateLimit from '@fastify/rate-limit'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
@@ -34,6 +35,18 @@ export interface BuildAppOptions {
    * in server/index.ts.
    */
   mountApi?: boolean
+  /**
+   * Absolute path containing logo files referenced via `image.path`. When
+   * unset (the default), the `image.path` feature is disabled and any
+   * request using it gets a 400.
+   */
+  logoDir?: string | null
+  /**
+   * Optional allowlist of hostnames acceptable as `image.href` remote URLs.
+   * When unset, every public hostname is allowed (SSRF guards still apply).
+   * When set, hostnames must match exactly.
+   */
+  remoteLogoHosts?: string[] | null
 }
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -44,7 +57,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     version = readPackageVersion(),
     trustProxy = true,
     logger = process.env.NODE_ENV !== 'test',
-    mountApi = true
+    mountApi = true,
+    logoDir = process.env.LOGO_DIR ?? null,
+    remoteLogoHosts = parseHostList(process.env.REMOTE_LOGO_HOSTS)
   } = options
 
   const staticDir =
@@ -65,6 +80,19 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       timeWindow: '1 minute',
       allowList: (req) => req.url === '/api/health' || req.url.startsWith('/api/docs'),
       keyGenerator: (req) => req.ip
+    })
+
+    await app.register(fastifyMultipart, {
+      limits: {
+        // Logo file part hard cap. Matches the resolver's MAX_BYTES so
+        // misbehaving uploads are rejected before they reach the handler.
+        fileSize: 5 * 1024 * 1024,
+        files: 1,
+        // The config field part can be larger than the default 1MB if the
+        // QR has a chunky frame text + nested options.
+        fieldSize: 2 * 1024 * 1024,
+        fields: 8
+      }
     })
 
     app.addHook('onRequest', makeAuthHook({ apiKey }))
@@ -102,7 +130,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     const storage = new FileStorage({ dir: storageDir })
 
     await app.register(healthRoutes, { version })
-    await app.register(qrRoutes, { storage })
+    await app.register(qrRoutes, {
+      storage,
+      logoResolverOptions: {
+        logoDir,
+        remoteHostAllowlist: remoteLogoHosts
+      }
+    })
   }
 
   if (staticDir) {
@@ -126,6 +160,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   }
 
   return app
+}
+
+function parseHostList(raw: string | undefined): string[] | null {
+  if (!raw) return null
+  const hosts = raw
+    .split(',')
+    .map((h) => h.trim())
+    .filter((h) => h.length > 0)
+  return hosts.length > 0 ? hosts : null
 }
 
 function readNumberEnv(name: string, fallback: number): number {

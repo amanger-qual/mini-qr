@@ -29,8 +29,17 @@ const imageSchema = z
     href: z
       .string()
       .min(1)
+      .optional()
       .describe(
-        'Logo image as a data: URI (e.g. "data:image/png;base64,..."). Remote http(s) URLs are NOT supported server-side.'
+        'Logo image source. Accepts (1) a `data:` URI with bytes inlined, or (2) an `https://`/`http://` URL — the server fetches it, applies SSRF guards (no private/loopback IPs, 5MB max, 5s timeout, image/* only), and inlines the bytes.'
+      ),
+    path: z
+      .string()
+      .min(1)
+      .max(512)
+      .optional()
+      .describe(
+        'Filename inside the configured `LOGO_DIR`. The server reads the file from disk. Requires `LOGO_DIR` env to be set.'
       ),
     sizeRatio: z
       .number()
@@ -46,7 +55,9 @@ const imageSchema = z
       .describe('Padding around the logo in module units.'),
     hideBackgroundDots: z.boolean().optional()
   })
-  .describe('Optional center logo. Only data: URIs are supported by the API.')
+  .describe(
+    'Optional center logo. Provide bytes one of four ways: data URI, remote URL, `image.path` (requires `LOGO_DIR`), or a `logo` file part in a multipart request.'
+  )
 
 const frameSchema = z
   .object({

@@ -105,7 +105,10 @@ export default [
         Buffer: 'readonly',
         NodeJS: 'readonly',
         global: 'readonly',
-        require: 'readonly'
+        require: 'readonly',
+        AbortController: 'readonly',
+        fetch: 'readonly',
+        Response: 'readonly'
       }
     }
   }
