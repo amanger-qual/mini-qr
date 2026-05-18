@@ -1,3 +1,8 @@
+## v0.31.0 (2026-05-18)
+- 📝 Refresh the repository documentation for the GHCR quick start, `compose.yaml`, and `compose.dev.yaml`.
+- 🔌 Update the self-hosting and API docs to match the live HTTP API routes and runtime behavior.
+- ⚠️ Add an AI coding disclaimer so generated changes are reviewed and tested like any other code.
+
 ## v0.30.0 (2026-05-11)
 - ✨ Add adjustable image size (ratio) option for logo ([#268](https://github.com/lyqht/mini-qr/pull/268))
 - ♻️ add FontCategory type and FontOption type for better type checking and readability ([#270](https://github.com/lyqht/mini-qr/pull/270))

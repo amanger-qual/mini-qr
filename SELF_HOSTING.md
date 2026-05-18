@@ -9,20 +9,22 @@ This document covers all the ways to self-host MiniQR.
 Pull the prebuilt image from GitHub Container Registry and start the app:
 
 ```bash
-wget https://github.com/lyqht/mini-qr/raw/main/docker-compose.yml
+wget https://raw.githubusercontent.com/amanger-qual/mini-qr/main/compose.yaml
 docker compose up -d
 ```
 
 The app will be available at [http://localhost](http://localhost) (port 80, proxied by Nginx).
+This path pulls `ghcr.io/amanger-qual/mini-qr:latest`, so nobody has to build it locally unless they want to.
+If the pull is blocked, the GHCR package needs to be public or you need to `docker login ghcr.io` first.
 
-> **Note:** The `docker-compose.yml` embeds its own Nginx config — you only need this one file for the Quick Start. No other files are required.
+> **Note:** `compose.yaml` embeds its own Nginx config — you only need this one file for the Quick Start. No other files are required.
 
 ### Build Locally
 
-To build from source, clone the repository and replace the `image:` line in `docker-compose.yml` with a `build:` section pointing to the local Dockerfile. Then run:
+To build from source, clone the repository and use `compose.dev.yaml` alongside `compose.yaml`:
 
 ```bash
-docker compose up -d --build
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 Or build and run manually:
@@ -37,7 +39,7 @@ docker run -d -p 80:8080 mini-qr
 Compile the application directly using NPM and Vite:
 
 ```bash
-git clone https://github.com/lyqht/mini-qr.git
+git clone https://github.com/amanger-qual/mini-qr.git
 cd mini-qr
 npm install
 npm run build
@@ -56,46 +58,46 @@ php -S localhost:8080
 
 All `VITE_*` variables are **build-time** arguments — they are baked into the static assets at build time and cannot be changed at runtime without rebuilding the image.
 
-| Variable                      | `docker-compose.yml` alias | Description                                                                                       | Default            |
-| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------- | ------------------ |
-| `BASE_PATH`                   | `BASE_PATH`                | URL sub-path for deployment (e.g., `/mini-qr` for `domain.com/mini-qr`)                           | `/`                |
-| `VITE_HIDE_CREDITS`           | `HIDE_CREDITS`             | Set to `"true"` to hide the footer credits                                                        | `"false"`          |
-| `VITE_DEFAULT_PRESET`         | `DEFAULT_PRESET`           | Name of the default QR code style preset (e.g., `"plain"`, `"lyqht"`)                             | `""`               |
-| `VITE_DEFAULT_DATA_TO_ENCODE` | `DEFAULT_DATA`             | Default text/URL pre-filled in the QR code input field when the app loads                        | `""`               |
-| `VITE_QR_CODE_PRESETS`        | `PRESETS`                  | JSON array of custom QR code presets. See [Custom Presets](#custom-presets) below                 | `"[]"`             |
-| `VITE_FRAME_PRESET`           | `FRAME_PRESET`             | Name of the default frame preset to apply (e.g., `"Default Frame"`)                              | `""`               |
-| `VITE_FRAME_PRESETS`          | `FRAME_PRESETS`            | JSON array of custom frame presets. See [Custom Presets](#custom-presets) below                   | `"[]"`             |
-| `VITE_DISABLE_LOCAL_STORAGE`  | `DISABLE_LOCAL_STORAGE`    | Set to `"true"` to prevent the app from loading previously saved settings on startup             | `"false"`          |
-| `API_KEY`                     | `API_KEY`                  | Runtime — if set, all `/api/*` requests must present this key. Leave blank for an open API.       | `""`               |
-| `QR_STORAGE_DIR`              | `QR_STORAGE_DIR`           | Runtime — where saved QR codes live. Mount a volume here to persist across restarts.              | `/data/qr-files`   |
-| `API_RATE_LIMIT_PER_MIN`      | `API_RATE_LIMIT_PER_MIN`   | Runtime — per-IP rate limit for `/api/*`. Health and docs are always exempt.                      | `1000`             |
-| `PORT`                        | `PORT`                     | Runtime — port the SPA (and API, when shared) listens on.                                         | `8080`             |
-| `API_PORT`                    | `API_PORT`                 | Runtime — when set, the API binds here and the SPA stays on `PORT`. See [Split-port mode](#split-port-mode). | _(shared)_         |
-| `API_HOST`                    | `API_HOST`                 | Runtime — interface to bind the API to in split-port mode. Defaults to `HOST`.                    | _(same as `HOST`)_ |
-| `LOGO_DIR`                    | `LOGO_DIR`                 | Runtime — directory containing reusable logo files for `image.path`. Unset = feature disabled.    | _(unset)_          |
-| `REMOTE_LOGO_HOSTS`           | `REMOTE_LOGO_HOSTS`        | Runtime — comma-separated hostnames allowed for remote `image.href` URLs. Unset = any public host.| _(unset)_          |
+| Variable                      | `compose.dev.yaml` build arg | Description                                                                                                  | Default            |
+| ----------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `BASE_PATH`                   | `BASE_PATH`                  | URL sub-path for deployment (e.g., `/mini-qr` for `domain.com/mini-qr`)                                      | `/`                |
+| `VITE_HIDE_CREDITS`           | `VITE_HIDE_CREDITS`          | Set to `"true"` to hide the footer credits                                                                   | `"false"`          |
+| `VITE_DEFAULT_PRESET`         | `VITE_DEFAULT_PRESET`        | Name of the default QR code style preset (e.g., `"plain"`, `"lyqht"`)                                        | `""`               |
+| `VITE_DEFAULT_DATA_TO_ENCODE` | `VITE_DEFAULT_DATA_TO_ENCODE` | Default text/URL pre-filled in the QR code input field when the app loads                                    | `""`               |
+| `VITE_QR_CODE_PRESETS`        | `VITE_QR_CODE_PRESETS`       | JSON array of custom QR code presets. See [Custom Presets](#custom-presets) below                            | `"[]"`             |
+| `VITE_FRAME_PRESET`           | `VITE_FRAME_PRESET`          | Name of the default frame preset to apply (e.g., `"Default Frame"`)                                          | `""`               |
+| `VITE_FRAME_PRESETS`          | `VITE_FRAME_PRESETS`         | JSON array of custom frame presets. See [Custom Presets](#custom-presets) below                              | `"[]"`             |
+| `VITE_DISABLE_LOCAL_STORAGE`  | `VITE_DISABLE_LOCAL_STORAGE` | Set to `"true"` to prevent the app from loading previously saved settings on startup                         | `"false"`          |
+| `API_KEY`                     | `API_KEY`                    | Runtime — if set, all `/api/*` requests must present this key. Leave blank for an open API.                  | `""`               |
+| `QR_STORAGE_DIR`              | `QR_STORAGE_DIR`             | Runtime — where saved QR codes live. Mount a volume here to persist across restarts.                         | `/data/qr-files`   |
+| `API_RATE_LIMIT_PER_MIN`      | `API_RATE_LIMIT_PER_MIN`     | Runtime — per-IP rate limit for `/api/*`. Health and docs are always exempt.                                 | `1000`             |
+| `PORT`                        | `PORT`                       | Runtime — port the SPA (and API, when shared) listens on.                                                    | `8080`             |
+| `API_PORT`                    | `API_PORT`                   | Runtime — when set, the API binds here and the SPA stays on `PORT`. See [Split-port mode](#split-port-mode). | _(shared)_         |
+| `API_HOST`                    | `API_HOST`                   | Runtime — interface to bind the API to in split-port mode. Defaults to `HOST`.                               | _(same as `HOST`)_ |
+| `LOGO_DIR`                    | `LOGO_DIR`                   | Runtime — directory containing reusable logo files for `image.path`. Unset = feature disabled.               | _(unset)_          |
+| `REMOTE_LOGO_HOSTS`           | `REMOTE_LOGO_HOSTS`          | Runtime — comma-separated hostnames allowed for remote `image.href` URLs. Unset = any public host.           | _(unset)_          |
 
-### Passing Variables via docker-compose
+### Passing Variables via `compose.dev.yaml`
 
-The `docker-compose.yml` maps shorter environment variable names to the full build arg names. Set them on the host before running:
+The `compose.dev.yaml` file forwards the build args directly. Set the matching environment variables on the host before running:
 
 ```bash
-BASE_PATH=/mini-qr DEFAULT_PRESET=plain DISABLE_LOCAL_STORAGE=true docker compose up -d --build
+BASE_PATH=/mini-qr VITE_DEFAULT_PRESET=plain VITE_DISABLE_LOCAL_STORAGE=true docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
-Or create a `.env` file alongside `docker-compose.yml`:
+Or create a `.env` file alongside `compose.yaml`:
 
 ```dotenv
 BASE_PATH=/mini-qr
-DEFAULT_PRESET=plain
-HIDE_CREDITS=false
-DISABLE_LOCAL_STORAGE=true
+VITE_DEFAULT_PRESET=plain
+VITE_HIDE_CREDITS=false
+VITE_DISABLE_LOCAL_STORAGE=true
 ```
 
 Then run:
 
 ```bash
-docker compose up -d --build
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 ### Passing Variables via `docker build`
@@ -131,7 +133,7 @@ A JSON array of preset objects. Each preset overrides the visual style of the QR
 Pass as a build arg (escape the JSON or use a `.env` file):
 
 ```bash
-PRESETS='[{"name":"My Brand","dotsOptions":{"color":"#ff0000","type":"rounded"}}]' docker compose up -d --build
+VITE_QR_CODE_PRESETS='[{"name":"My Brand","dotsOptions":{"color":"#ff0000","type":"rounded"}}]' docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 ### Frame Presets (`VITE_FRAME_PRESETS`)
@@ -167,7 +169,7 @@ docker compose up -d
 ### Deploy at a subdirectory
 
 ```bash
-BASE_PATH=/mini-qr docker compose up -d --build
+BASE_PATH=/mini-qr docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 ### Fixed preset with localStorage disabled
@@ -175,29 +177,29 @@ BASE_PATH=/mini-qr docker compose up -d --build
 Useful when embedding MiniQR in a branded context where users should always see the configured preset:
 
 ```bash
-DEFAULT_PRESET=plain DISABLE_LOCAL_STORAGE=true docker compose up -d --build
+VITE_DEFAULT_PRESET=plain VITE_DISABLE_LOCAL_STORAGE=true docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 ### Hide footer credits
 
 ```bash
-HIDE_CREDITS=true docker compose up -d --build
+VITE_HIDE_CREDITS=true docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 ## Nginx Proxy
 
-The `docker-compose.yml` includes an `nginx-proxy` service that proxies traffic to the MiniQR app container. The Nginx configuration is embedded inline in `docker-compose.yml` under the `configs:` key, so no extra files are needed for the Quick Start.
+The `compose.yaml` includes an `nginx-proxy` service that proxies traffic to the MiniQR app container. The Nginx configuration is embedded inline in `compose.yaml` under the `configs:` key, so no extra files are needed for the Quick Start.
 
-To override the Nginx config (e.g. for subdirectory deployment or custom headers), replace the `configs.nginx-proxy-conf.content` block in `docker-compose.yml` with your own configuration, or switch to a file-based mount:
+To override the Nginx config (e.g. for subdirectory deployment or custom headers), replace the `configs.nginx-proxy-conf.content` block in `compose.yaml` with your own configuration, or switch to a file-based mount:
 
 ```yaml
-    volumes:
-      - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+volumes:
+  - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
 ```
 
 ## HTTP API
 
-MiniQR ships an HTTP API so you can generate, save, list, and download QR codes without touching the UI. The API runs in the same container as the SPA on the same port and is mounted under `/api`. Interactive Swagger UI is available at `/api/docs` and the raw spec at `/api/openapi.json`.
+MiniQR ships an HTTP API so you can generate, save, list, and download QR codes without touching the UI. The API runs in the same container as the SPA on the same port and is mounted under `/api`. Interactive Swagger UI is available at `/api/docs` and the raw spec at `/api/docs/json`.
 
 ### Auth
 
@@ -219,17 +221,17 @@ Per-IP rate limit defaults to **1000 requests/minute** for `/api/*` (health and 
 
 ### Endpoints
 
-| Method | Path                              | Description                                                   |
-| ------ | --------------------------------- | ------------------------------------------------------------- |
-| POST   | `/api/qr`                         | Generate (and optionally save) a QR code. JSON body. Returns binary. |
-| POST   | `/api/qr/upload`                  | Same as `/api/qr` but accepts a `multipart/form-data` body with a `logo` file part. |
-| GET    | `/api/qr/files`                   | List saved QR codes (newest first).                           |
-| GET    | `/api/qr/files/:id[.ext]`         | Download a saved QR code. Extension optional for `<img src>`. |
-| GET    | `/api/qr/files/:id/meta`          | Get the JSON sidecar (config + metadata) for a saved file.    |
-| DELETE | `/api/qr/files/:id`               | Delete a saved QR code (both binary and sidecar).             |
-| GET    | `/api/health`                     | Liveness + version. Always public, never rate limited.        |
-| GET    | `/api/docs`                       | Swagger UI.                                                   |
-| GET    | `/api/docs/json`                  | Raw OpenAPI 3.1 spec.                                         |
+| Method | Path                      | Description                                                                         |
+| ------ | ------------------------- | ----------------------------------------------------------------------------------- |
+| POST   | `/api/qr`                 | Generate (and optionally save) a QR code. JSON body. Returns binary.                |
+| POST   | `/api/qr/upload`          | Same as `/api/qr` but accepts a `multipart/form-data` body with a `logo` file part. |
+| GET    | `/api/qr/files`           | List saved QR codes (newest first).                                                 |
+| GET    | `/api/qr/files/:id[.ext]` | Download a saved QR code. Extension optional for `<img src>`.                       |
+| GET    | `/api/qr/files/:id/meta`  | Get the JSON sidecar (config + metadata) for a saved file.                          |
+| DELETE | `/api/qr/files/:id`       | Delete a saved QR code (both binary and sidecar).                                   |
+| GET    | `/api/health`             | Liveness + version. Always public, never rate limited.                              |
+| GET    | `/api/docs`               | Swagger UI.                                                                         |
+| GET    | `/api/docs/json`          | Raw OpenAPI 3.1 spec.                                                               |
 
 ### Examples
 
@@ -277,7 +279,7 @@ curl -X DELETE http://localhost/api/qr/files/2026-05-15T20-30-37-086Z-spring-pro
 By default the SPA and the API share a single port (`PORT`, default `8080`) — one container, one nginx upstream, same-origin requests. Set `API_PORT` to bind the API on its own port:
 
 ```bash
-PORT=8080 API_PORT=8081 docker compose up -d
+PORT=8080 API_PORT=8081 docker compose -f compose.yaml up -d
 ```
 
 In split mode:
@@ -287,14 +289,14 @@ In split mode:
 - Two independent Fastify instances. A misbehaving API won't bring down the UI.
 - `API_HOST` lets you bind them to different interfaces (e.g., SPA on `0.0.0.0`, API on `127.0.0.1` behind a private network).
 
-You'll need to expose the second port in `docker-compose.yml`:
+You'll need to expose the second port in `compose.yaml`:
 
 ```yaml
 services:
   mini-qr:
     ports:
-      - 8080:8080      # SPA
-      - 8081:8081      # API
+      - 8080:8080 # SPA
+      - 8081:8081 # API
     environment:
       API_PORT: 8081
 ```
@@ -303,12 +305,12 @@ services:
 
 The API supports four ways to attach a logo. Pick whichever fits how you're calling it:
 
-| Method                 | Where the bytes come from                     | Best for                          |
-| ---------------------- | --------------------------------------------- | --------------------------------- |
-| Inline `data:` URI     | Base64-encoded in the JSON body               | Scripts that already have bytes   |
-| Remote `http(s)://` URL| Server fetches it (with SSRF guards)          | Logos hosted on a CDN             |
-| `image.path`           | Read from `LOGO_DIR` on the server filesystem | Reusable logos across many calls  |
-| Multipart `logo` part  | Uploaded as a file part                       | Hand-off from `curl -F` / Bruno   |
+| Method                  | Where the bytes come from                     | Best for                         |
+| ----------------------- | --------------------------------------------- | -------------------------------- |
+| Inline `data:` URI      | Base64-encoded in the JSON body               | Scripts that already have bytes  |
+| Remote `http(s)://` URL | Server fetches it (with SSRF guards)          | Logos hosted on a CDN            |
+| `image.path`            | Read from `LOGO_DIR` on the server filesystem | Reusable logos across many calls |
+| Multipart `logo` part   | Uploaded as a file part                       | Hand-off from `curl -F` / Bruno  |
 
 #### 1. Inline (data URI)
 
@@ -374,11 +376,11 @@ curl -X POST http://localhost/api/qr/upload \
   --output qr.png
 ```
 
-The `config` field is the same JSON body as `POST /api/qr`. Any `image.href`/`image.path` in the config is overridden by the uploaded `logo` file. Same 5MB cap and image/* mime check as the other paths.
+The `config` field is the same JSON body as `POST /api/qr`. Any `image.href`/`image.path` in the config is overridden by the uploaded `logo` file. Same 5MB cap and image/\* mime check as the other paths.
 
 ### Persisting saved files
 
-Saved files live at `QR_STORAGE_DIR` (default `/data/qr-files`). To survive container restarts, mount a volume to that path in `docker-compose.yml`:
+Saved files live at `QR_STORAGE_DIR` (default `/data/qr-files`). To survive container restarts, mount a volume to that path in `compose.yaml`:
 
 ```yaml
 services:
@@ -399,4 +401,4 @@ Each saved QR produces two files: the binary (`<id>.png|svg|jpg`) and a JSON sid
 
 ## Customization Example
 
-An example of a self-hosted website with a modified MiniQR app with specific language and preset: https://qrcode.outils.restosducoeur.org/
+An example of a self-hosted website with a modified MiniQR app with specific language and preset: <https://qrcode.outils.restosducoeur.org/>

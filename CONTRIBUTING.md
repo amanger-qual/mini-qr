@@ -163,7 +163,7 @@ The project is a modern Vite-powered Vue.js 3 application with TypeScript suppor
 - Finder, timing, and alignment patterns positioned per the spec for every QR version 1–40
 - Capacity tables for the four data modes (Numeric, Alphanumeric, Byte, Kanji)
 
-Inside [`src/lib/qr-code/matrix.ts`](src/lib/qr-code/matrix.ts) the call into the library is three lines: build a QR, add the bytes, ask for `isDark(r, c)` per module. The only thing we override is `qrcode.stringToBytes` so it uses `TextEncoder` (proper UTF-8) instead of the library's Latin-1 default — that override is what fixes [#119](https://github.com/lyqht/mini-qr/issues/119).
+Inside [`src/lib/qr-code/matrix.ts`](src/lib/qr-code/matrix.ts) the call into the library is three lines: build a QR, add the bytes, ask for `isDark(r, c)` per module. The only thing we override is `qrcode.stringToBytes` so it uses `TextEncoder` (proper UTF-8) instead of the library's Latin-1 default — that override is what fixes [#119](https://github.com/amanger-qual/mini-qr/issues/119).
 
 ### "Why not implement the matrix ourselves and drop the dep?"
 
@@ -224,7 +224,7 @@ An easy way to add a new preset is to create the QR code on the website first, a
 ```json
 {
   "props": {
-    "data": "https://github.com/lyqht/mini-qr"
+    "data": "https://github.com/amanger-qual/mini-qr"
     // other props...
   },
   "style": {
@@ -237,7 +237,7 @@ Combine "style" with the value of "props" in a new json.
 
 ```ts
 const yourNewPreset = {
-  data: 'https://github.com/lyqht/mini-qr',
+  data: 'https://github.com/amanger-qual/mini-qr',
   // other props...
   style: {
     // other styles...

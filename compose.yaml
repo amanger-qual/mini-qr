@@ -1,27 +1,22 @@
 ---
 services:
   mini-qr:
-    build: .
-    # To pull the upstream prebuilt SPA-only image instead, swap the line
-    # above for:
-    #   image: ghcr.io/lyqht/mini-qr:latest
-    # Note: the upstream image does not include the HTTP API.
+    image: ghcr.io/amanger-qual/mini-qr:latest
     container_name: mini-qr
     restart: unless-stopped
+    environment:
+      API_KEY: ${API_KEY:-}
+      QR_STORAGE_DIR: ${QR_STORAGE_DIR:-/data/qr-files}
+      API_RATE_LIMIT_PER_MIN: ${API_RATE_LIMIT_PER_MIN:-1000}
+      API_PORT: ${API_PORT:-}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      REMOTE_LOGO_HOSTS: ${REMOTE_LOGO_HOSTS:-}
     networks:
       - mini-qr-network
-    # API settings — uncomment to require an API key, change rate limit, or
-    # relocate persisted QR codes. See SELF_HOSTING.md for the full HTTP API.
-    # environment:
-    #   API_KEY: change-me
-    #   API_RATE_LIMIT_PER_MIN: 1000
-    #   QR_STORAGE_DIR: /data/qr-files
-    #   # --- Split-port mode (optional) ---
-    #   # API_PORT: 8081
-    # # Expose the API port too when running split mode:
+    # Uncomment if you want the API on a second host port.
     # ports:
     #   - 8081:8081
-    # Persist server-saved QR codes across container restarts.
+    # Uncomment if you want saved QR codes to survive container rebuilds.
     # volumes:
     #   - ./qr-files:/data/qr-files
 
