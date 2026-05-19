@@ -233,6 +233,92 @@ Per-IP rate limit defaults to **1000 requests/minute** for `/api/*` (health and 
 | GET    | `/api/docs`               | Swagger UI.                                                                         |
 | GET    | `/api/docs/json`          | Raw OpenAPI 3.1 spec.                                                               |
 
+### Limits at a glance
+
+- Request body limit: 5MB
+- Multipart logo file limit: 5MB
+- Multipart `config` field limit: 2MB
+- Multipart file count: 1
+- Multipart field count: 8
+- Rate limit: 1000 requests/minute per IP for `/api/*`
+- `GET /api/health` and `/api/docs*` are exempt from the rate limit
+
+### `POST /api/qr` body
+
+| Field | Type | Options / limits | Notes |
+| ----- | ---- | ---------------- | ----- |
+| `data` | string | Required, 1 to 4000 chars | Payload encoded into the QR code. |
+| `size` | integer | 32 to 4096, default 200 | Output size in pixels. |
+| `margin` | integer | 0 to 20, default 0 | Quiet zone in modules. |
+| `errorCorrectionLevel` | enum | `L`, `M`, `Q`, `H` | Higher values add redundancy and make the QR larger. |
+| `dots.shape` | enum | `square`, `rounded`, `extra-rounded`, `classy`, `classy-rounded`, `dots` | Shape for QR modules. |
+| `dots.color` | string | Any CSS color, max 64 chars | Dot color. |
+| `cornerSquares.shape` | enum | `square`, `rounded`, `extra-rounded`, `dot` | Finder pattern outer square shape. |
+| `cornerSquares.color` | string | Any CSS color, max 64 chars | Finder pattern outer square color. |
+| `cornerDots.shape` | enum | `square`, `rounded`, `dot` | Finder pattern inner dot shape. |
+| `cornerDots.color` | string | Any CSS color, max 64 chars | Finder pattern inner dot color. |
+| `background.color` | string | Any CSS color, max 64 chars | Background color. |
+| `image.href` | string | `data:` URI or `http(s)://` URL | Remote URLs must be public, non-loopback, max 5MB, 5s timeout, `image/*`, no redirects. `REMOTE_LOGO_HOSTS` can further restrict the hostname allowlist. |
+| `image.path` | string | Max 512 chars, safe filename characters only | Reads from `LOGO_DIR`. The file must stay inside that directory. |
+| `image.sizeRatio` | number | 0 to 1 | Logo size as a ratio of the QR. |
+| `image.margin` | number | 0 to 50 | Padding around the logo in module units. |
+| `image.hideBackgroundDots` | boolean | `true` or `false` | Hides background dots behind the logo. |
+| `frame.text` | string | Required when `frame` is provided, max 500 chars | Caption text. |
+| `frame.textPosition` | enum | `top`, `bottom`, `left`, `right` | Caption position. |
+| `frame.textColor` | string | Any CSS color, max 64 chars | Caption text color. |
+| `frame.backgroundColor` | string | Any CSS color, max 64 chars | Frame background color. |
+| `frame.borderColor` | string | Any CSS color, max 64 chars | Border color. |
+| `frame.borderWidth` | number | 0 to 40 | Border width in pixels. |
+| `frame.borderRadius` | number | 0 to 200 | Border radius in pixels. |
+| `frame.padding` | number | 0 to 200 | Padding around the QR code. |
+| `frame.fontFamily` | string | Max 120 chars | Caption font family. The UI offers a curated dropdown, but any valid CSS `font-family` string is accepted. |
+| `frame.fontSize` | number | 4 to 200 | Caption font size in pixels. |
+| `format` | enum | `svg`, `png`, `jpg`, default `png` | Output format. `jpg` uses JPEG rasterization. |
+| `save` | boolean | `true` or `false` | Persists the generated file on the server. |
+| `name` | string | Max 120 chars | Human label added to the saved id/filename. |
+| `quality` | number | 1 to 100 | JPEG quality. Only matters when `format=jpg`. |
+
+If `save: true`, the response also includes `X-QR-File-Id` and `Location` headers.
+
+### `frame.fontFamily` options
+
+The app uses a curated list for the frame font dropdown. You can still type or send any valid CSS `font-family` string, but these are the built-in options:
+
+| Category | Options |
+| -------- | ------- |
+| Default | `Default` |
+| Sans-serif | `Arial`, `Verdana`, `Roboto`, `Inter`, `Open Sans`, `Lato`, `Montserrat`, `Poppins`, `Oswald`, `Raleway`, `Nunito` |
+| Serif | `Georgia`, `Times New Roman`, `Playfair Display`, `Merriweather` |
+| Monospace | `Courier New`, `JetBrains Mono`, `Fira Code`, `Source Code Pro`, `IBM Plex Mono`, `Inconsolata` |
+| Display | `Pacifico`, `Bebas Neue` |
+
+### `POST /api/qr/upload`
+
+Multipart fields:
+
+| Field | Type | Options / limits | Notes |
+| ----- | ---- | ---------------- | ----- |
+| `config` | text/json | Required, max 2MB | The same JSON body accepted by `POST /api/qr`, encoded as a plain text field. If `image.href` or `image.path` is present, the uploaded `logo` file overrides it. |
+| `logo` | file | Optional, image file, max 5MB | Uploaded center logo. Only one file part is accepted. MIME must start with `image/`. |
+
+### `GET /api/qr/files`
+
+| Query | Type | Options / limits | Notes |
+| ----- | ---- | ---------------- | ----- |
+| `limit` | integer | 1 to 200 | Page size. |
+| `offset` | integer | 0 or greater | Zero-based offset into the result set. |
+| `q` | string | Max 120 chars | Case-insensitive substring match against the saved name. |
+| `format` | enum | `svg`, `png`, `jpg` | Filter to one file format. |
+
+### Saved file path params
+
+The saved-file routes use `:id` in the path.
+
+- `id` must be 1 to 256 characters
+- allowed characters: letters, numbers, `.`, `_`, `-`
+- `GET /api/qr/files/:id[.ext]` accepts `.png`, `.svg`, `.jpg`, or `.jpeg`
+- requesting the wrong extension returns `409 format_mismatch`
+
 ### Examples
 
 Generate a PNG and save the response to disk:

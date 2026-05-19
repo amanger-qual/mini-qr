@@ -100,6 +100,7 @@ For full self-hosting instructions including Docker setup, environment variables
 MiniQR also ships with an HTTP API for generating, saving, listing, and downloading QR codes without using the UI. Interactive docs live at `/api/docs`, and the raw OpenAPI spec is available at `/api/docs/json`.
 
 The API is open by default. If you set `API_KEY`, requests under `/api/*` need either `Authorization: Bearer <API_KEY>` or `X-API-Key: <API_KEY>`. Saved files and rate limits are documented in [SELF_HOSTING.md](SELF_HOSTING.md#http-api).
+For the full parameter reference, limits, and frame font options, see [SELF_HOSTING.md](SELF_HOSTING.md#http-api).
 
 The main endpoints are:
 
